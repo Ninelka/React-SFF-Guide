@@ -1,107 +1,79 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useFetchQuestionsData } from "./services/fetchQuestionsData";
+import { useFetchBooksData } from "./services/fetchBooksData";
 import IButton from './interfaces/button.interface';
 import IBook from './interfaces/book.interface';
 import IQuestion from './interfaces/question.interface';
 
 import Button from './components/Button/Button';
+import Book from './components/Book/Book';
 
-type MyProps = {
-  title?: string,
-  text?: string,
-  author?: string,
-  nextStepEvent?: () => void,
-  resultEvent?: () => void
+const App: React.FC = () => {
+  const [currentQuestionId, setCurrentQuestionId] = useState<number | undefined>(1)
+  const [currentQuestion, setCurrentQuestion] = useState<IQuestion | undefined>()
+  const [target, setTarget] = useState<number>()
+  const [book, setBook] = useState<IBook>()
 
-};
-type MyState = {
-  currentQuestion: number,
-  title?: string,
-  nextStep?: number,
-  target?: number | number[],
-  buttons?: IButton[],
-  questionsData?: IQuestion[],
-  booksData?: IBook[]
-};
+  const questionsData = useFetchQuestionsData('/data/questions.json')
+  const booksData = useFetchBooksData('/data/books.json')
 
-class App extends React.Component<MyProps, MyState> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      currentQuestion: 1,
-      questionsData: [],
-      booksData: []
-    };
+  const findCurrentQuestion = (questions: IQuestion[] | undefined, id: number | undefined) => {
+    let question = questions?.find((question: IQuestion) => question.id === id)
 
-    this.getBooks = this.getBooks.bind(this);
-    this.getQuestions = this.getQuestions.bind(this);
+    return question;
   }
 
-  // Put all questions in state
+  const goToResult = (books: IBook[] | undefined, id: number | undefined): IBook | undefined => {
+    let resultBooks = books?.find((book: IBook) => book.id === id);
 
-  getQuestions = (response: IQuestion[]) => {
-    this.setState({
-      questionsData: response
-    })
+    return resultBooks;
   }
 
-  // Put all books in state
+  const handleClick = (button: IButton) => {
+    if (button.target) {
+      setTarget(button.target)
+    }
 
-  getBooks = (response: IBook[]) => {
-    this.setState({
-      booksData: response
-    })
+    if (button.nextStep) {
+      setCurrentQuestionId(button.nextStep)
+      setBook(undefined);
+
+      if (button.target) {
+        setTarget(button.target)
+      }
+    }
   }
 
-  fetchQuestions = () => {
-    fetch('/data/questions.json')
-      .then(res => res.json())
-      .then(result => this.getQuestions(result)
-      )
-      .catch(error => {
-        console.log('Request failed', error)
-      })
-  }
+  useEffect(() => {
+    let question = findCurrentQuestion(questionsData, currentQuestionId);
+    setCurrentQuestion(question);
 
-  fetchBooks = () => {
-    fetch('/data/books.json')
-      .then(res => res.json())
-      .then(result => this.getBooks(result)
-      )
-      .catch(error => {
-        console.log('Request failed', error)
-      })
-  }
+  }, [currentQuestionId, questionsData])
 
-  componentDidMount() {
-    this.fetchQuestions();
-    this.fetchBooks();
-  }
+  useEffect(() => {
+    let book = goToResult(booksData, target);
+    setBook(book);
+  }, [target])
 
-  render() {
-    let stateButtons = this.state.buttons;
-    let buttons: JSX.Element[] = [];
-    let stateBooks = this.state.booksData;
-    let books: JSX.Element[] = [];
-
-    stateButtons?.forEach((button, index) => {
-      buttons.push(
+  return (
+    <div>
+      <h1>{currentQuestion?.title}</h1>
+      {
+        <Book
+          title={book?.title}
+          author={book?.author}
+        ></Book>
+      }
+      {currentQuestion?.buttons?.map((button, index) =>
         <Button
           key={index}
           title={button.title}
           text={button.text}
+          clickEvent={() => handleClick(button)}
         ></Button>
-      );
-    });
-
-
-    return (
-      <div>
-        <h1>{this.state.title}</h1>
-        {books}
-        {buttons}
-      </div>
-    )
-  }
+      )}
+    </div>
+  )
 }
 
 export default App;

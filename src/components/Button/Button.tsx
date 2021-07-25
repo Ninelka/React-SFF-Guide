@@ -2,10 +2,10 @@ import React from 'react'
 import IButton from '../../interfaces/button.interface';
 
 function Button(props: IButton) {
-    console.log(props)
     return (
-        <button>
+        <button onClick={props.clickEvent}>
             {props.title}
+            {props.text}
         </button>
     )
 }

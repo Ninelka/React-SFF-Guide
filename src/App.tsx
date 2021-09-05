@@ -9,21 +9,29 @@ import Button from './components/Button/Button';
 import Book from './components/Book/Book';
 
 const App: React.FC = () => {
-  const [currentQuestionId, setCurrentQuestionId] = useState<number | undefined>(1)
-  const [currentQuestion, setCurrentQuestion] = useState<IQuestion | undefined>()
+  const [currentQuestionId, setCurrentQuestionId] = useState<number>(1)
+  const [currentQuestion, setCurrentQuestion] = useState<IQuestion>()
   const [target, setTarget] = useState<number>()
   const [book, setBook] = useState<IBook>()
 
   const questionsData = useFetchQuestionsData('/data/questions.json')
   const booksData = useFetchBooksData('/data/books.json')
 
-  const findCurrentQuestion = (questions: IQuestion[] | undefined, id: number | undefined) => {
+  const findCurrentQuestion = (questions: IQuestion[], id: number) => {
+    if (!questions || !id) {
+      return;
+    }
+
     let question = questions?.find((question: IQuestion) => question.id === id)
 
     return question;
   }
 
-  const goToResult = (books: IBook[] | undefined, id: number | undefined): IBook | undefined => {
+  const goToResult = (books: IBook[], id: number): IBook | undefined => {
+    if (!books || !id) {
+      return;
+    }
+
     let resultBooks = books?.find((book: IBook) => book.id === id);
 
     return resultBooks;
@@ -45,14 +53,21 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    let question = findCurrentQuestion(questionsData, currentQuestionId);
-    setCurrentQuestion(question);
+    let question;
+
+    if (questionsData) {
+      question = findCurrentQuestion(questionsData, currentQuestionId);
+      setCurrentQuestion(question);
+    }
 
   }, [currentQuestionId, questionsData])
 
   useEffect(() => {
-    let book = goToResult(booksData, target);
-    setBook(book);
+    let book;
+    if (booksData && target) {
+      book = goToResult(booksData, target);
+      setBook(book);
+    }
   }, [target])
 
   return (
